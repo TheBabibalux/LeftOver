@@ -342,23 +342,39 @@ namespace StarterAssets
                 transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
 
                 //Cibler les différentes parties du corps                
-                float aim = _input.look.y;
+                float aimY = _input.look.y;
+                float aimX = _input.look.x;
+
                 float aimHeight = 0;
-                if (aim > 0)
+                if (aimY > 0)
                 {
-                    aimHeight = Mathf.Lerp(target.targetCenter.position.y, target.targetHead.position.y, aim);
+                    aimHeight = Mathf.Lerp(target.targetCenter.position.y, target.targetHead.position.y, aimY);
                 }
-                else if (aim < 0)
+                else if (aimY < 0)
                 {
-                    aimHeight = Mathf.Lerp(target.targetCenter.position.y, target.targetLeg.position.y, Mathf.Abs(aim));
+                    aimHeight = Mathf.Lerp(target.targetCenter.position.y, target.targetLeg.position.y, Mathf.Abs(aimY));
                 }
                 else
                 {
                     aimHeight = target.targetCenter.position.y;
                 }
 
+                float aimLatitude = 0;
+                if (aimX > 0)
+                {
+                    aimLatitude = Mathf.Lerp(target.targetCenter.position.x, target.targetRight.position.x, aimX);
+                }
+                else if (aimX < 0)
+                {
+                    aimLatitude = Mathf.Lerp(target.targetCenter.position.x, target.targetLeft.position.x, Mathf.Abs(aimX));
+                }
+                else
+                {
+                    aimLatitude = target.targetCenter.position.x;
+                }
+
                 laserPointer.enabled = true;
-                Vector3 aimPos = new Vector3(target.targetCenter.position.x, aimHeight, target.targetCenter.position.z);
+                Vector3 aimPos = new Vector3(aimLatitude, aimHeight, target.targetCenter.position.z);
                 laserPointer.SetPosition(0,shootOrigin.position);
                 laserPointer.SetPosition(1, aimPos);
             }
