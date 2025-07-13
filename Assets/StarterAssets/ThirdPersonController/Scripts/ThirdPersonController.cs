@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
 #endif
@@ -75,11 +78,16 @@ namespace StarterAssets
         [Tooltip("For locking the camera position on all axis")]
         public bool LockCameraPosition = false;
 
+        [Header("Shooting System")]
         public Transform shootOrigin;
         public float lockDistance;
         public LayerMask targetMask;
+        public LayerMask targetHitMask;
         [SerializeField] Target target;
         public LineRenderer laserPointer;
+        public WeaponSO currentWeapon;
+        [SerializeField] private bool isAiming = false;
+        [SerializeField] private bool isInShootingCD = false;
 
         // cinemachine
         private float _cinemachineTargetYaw;
@@ -168,14 +176,20 @@ namespace StarterAssets
             switch(_input.locking)
             {
                 case true:
+                    isAiming = true;
                     LockTarget();
                     break;
                 case false:
-
+                    isAiming = false;
                     target = null;
                     laserPointer.enabled = false;
                     Look();
                     break;
+            }
+
+            if(_input.isShooting && target != null && !isInShootingCD)
+            {
+                Shoot();
             }
         }
 
@@ -207,8 +221,7 @@ namespace StarterAssets
                 _animator.SetBool(_animIDGrounded, Grounded);
             }
         }
-
-        private void CameraRotation()
+        /* private void CameraRotation()
         {
             // if there is an input and camera position is not fixed
             if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
@@ -228,12 +241,19 @@ namespace StarterAssets
             CinemachineCameraTarget.transform.rotation = Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
                 _cinemachineTargetYaw, 0.0f);
         }
+        */
 
         private void Move()
         {
-            // set target speed based on move speed, sprint speed and if sprint is pressed
-            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
-
+            float targetSpeed = 0;
+            if (!isAiming)
+            {
+                targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            }
+            else
+            {
+                targetSpeed = MoveSpeed * currentWeapon.aimingMoveSlowFactor;
+            }
             // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
             // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
@@ -385,6 +405,33 @@ namespace StarterAssets
 
                 Look();
             }
+        }
+
+        void Shoot()
+        {
+            RaycastHit hit;
+            Physics.Raycast(shootOrigin.position, laserPointer.GetPosition(1) - shootOrigin.position, out hit, 15, targetHitMask);
+            Debug.DrawRay(shootOrigin.position, laserPointer.GetPosition(1) - shootOrigin.position, Color.green, 3);
+
+            if(hit.collider != null)
+            {
+                TargetHitZone hitZone = hit.collider.GetComponent<TargetHitZone>();
+                float resultingHealth = hitZone.Hit(currentWeapon.baseDamage);
+                if (resultingHealth <= 0)
+                {
+                    target = null;
+                }
+            }
+
+            StartCoroutine(ShootingCooldown());
+        }
+
+        IEnumerator ShootingCooldown()
+        {
+            isInShootingCD = true;
+
+            yield return new WaitForSeconds(currentWeapon.shootingRate);
+            isInShootingCD = false;
         }
 
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)

@@ -42,18 +42,18 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Aim",
+                    "name": "Lock",
                     "type": "PassThrough",
-                    "id": "b8787801-a775-4348-8ee3-422a9ec775e5",
+                    "id": "f99452b9-d002-40bc-9439-5d9313aca71e",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Lock",
+                    "name": "Shoot",
                     "type": "PassThrough",
-                    "id": "f99452b9-d002-40bc-9439-5d9313aca71e",
+                    "id": "8f1980f5-2afe-4968-91ed-914be83a21d9",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -239,34 +239,45 @@
                 },
                 {
                     "name": "",
-                    "id": "0c440c85-d26c-4b44-b4fc-c3d7f64e6d40",
-                    "path": "<Gamepad>/rightTrigger",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Gamepad",
-                    "action": "Aim",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "8b8c16cb-79cd-4f09-9663-64bfcb19b429",
-                    "path": "<Keyboard>/rightShift",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "KeyboardMouse",
-                    "action": "Aim",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "17cb3886-1c63-4154-a61e-7d57131904aa",
                     "path": "<Gamepad>/leftTrigger",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Lock",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4185cfc8-51fb-4445-b412-fead1e7a07ce",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Lock",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ba91bf4a-b1ad-43b2-ac3b-28d050e05743",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "Shoot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "104d907e-3efa-40a9-b9ab-dd8109f99dfd",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Shoot",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

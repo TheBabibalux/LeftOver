@@ -1090,8 +1090,13 @@ MonoBehaviour:
   targetMask:
     serializedVersion: 2
     m_Bits: 64
+  targetHitMask:
+    serializedVersion: 2
+    m_Bits: 128
   target: {fileID: 0}
   laserPointer: {fileID: 7962962835905445353}
+  currentWeapon: {fileID: 11400000, guid: 5d1c7e8cdaf694d4ea30c026c4674108, type: 2}
+  isAiming: 0
 --- !u!114 &4757317227155651399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1127,6 +1132,7 @@ MonoBehaviour:
   sprint: 0
   isAiming: 0
   locking: 0
+  isShooting: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1
