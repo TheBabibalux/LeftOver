@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using StarterAssets;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour, IDamageable
 {
@@ -14,6 +15,13 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public float health;
     public ThirdPersonController target;
+    public NavMeshAgent agent;
+
+    public enum BehaviourState { Idle, Searching, Pursuit, Pause, Attack}
+    public BehaviourState state;
+
+    public float attackRange = 1;
+    public float attackCooldown = 2;
 
 
     private void Awake()
@@ -23,26 +31,73 @@ public class Enemy : MonoBehaviour, IDamageable
 
     private void FixedUpdate()
     {
-        Pursuit();
+        StateManagement();
     }
 
-    public void GetTarget()
+    #region Behaviour
+    private void StateManagement()
     {
+        switch(state)
+        {
+            case BehaviourState.Idle:
+                Idle();
+                break;
+            case BehaviourState.Searching:
 
+                break;
+            case BehaviourState.Pursuit:
+                Pursuit();
+                break;
+            case BehaviourState.Pause:
+
+                break;
+            case BehaviourState.Attack:
+                Attack();
+                break;
+        }
+    }
+
+    public void Idle()
+    {
+        if (target != null)
+        {
+            state = BehaviourState.Pursuit;
+        }
     }
 
     public void Pursuit()
     {
+        agent.destination = target.transform.position;
 
+        if(Vector3.Distance(this.transform.position,target.transform.position) <= attackRange)
+        {
+            state = BehaviourState.Attack;
+        }
     }
 
-    public void Move()
+    public void Attack()
     {
-        
 
+        StartCoroutine(PauseBehaviour(attackCooldown, BehaviourState.Pursuit));
     }
 
-    public float Damage(float damage, float damageMultiplier)
+    IEnumerator PauseBehaviour(float duration, BehaviourState exitState)
+    {
+        state = BehaviourState.Pause;
+        SetMovePause(false);
+
+        yield return new WaitForSeconds(duration);
+        state = exitState;
+        SetMovePause(true);
+    }
+
+    public void SetMovePause(bool state)
+    {
+        agent.isStopped = !state;
+    }
+    #endregion
+
+    public float TakeDamage(float damage, float damageMultiplier)
     {
         health -= damage * damageMultiplier;
 

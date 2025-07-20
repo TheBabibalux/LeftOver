@@ -8,6 +8,6 @@ public interface IDamageable
         get { return Health; }
         set { Health = value;} }
 
-    float Damage(float damage, float damageMultiplier);
+    float TakeDamage(float damage, float damageMultiplier);
 
 }

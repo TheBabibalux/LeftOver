@@ -10,7 +10,7 @@ public class TargetHitZone : MonoBehaviour
     
     public float Hit(float damage)
     {
-        float resultingHealth = self.Damage(damage, damageMultiplier);
+        float resultingHealth = self.TakeDamage(damage, damageMultiplier);
 
         return resultingHealth;
     }

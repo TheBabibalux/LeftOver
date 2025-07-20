@@ -88,6 +88,8 @@ namespace StarterAssets
         public WeaponSO currentWeapon;
         [SerializeField] private bool isAiming = false;
         [SerializeField] private bool isInShootingCD = false;
+        public GameObject basicHitFeedback;
+
 
         // cinemachine
         private float _cinemachineTargetYaw;
@@ -417,6 +419,10 @@ namespace StarterAssets
             {
                 TargetHitZone hitZone = hit.collider.GetComponent<TargetHitZone>();
                 float resultingHealth = hitZone.Hit(currentWeapon.baseDamage);
+
+                GameObject hitFeedbackObject = Instantiate<GameObject>(basicHitFeedback);
+                hitFeedbackObject.transform.position = hit.point;
+
                 if (resultingHealth <= 0)
                 {
                     target = null;
