@@ -14,7 +14,7 @@ public class Enemy : MonoBehaviour, IDamageable
     }
 
     public float health;
-    public ThirdPersonController target;
+    public TPSController target;
     public NavMeshAgent agent;
 
     public enum BehaviourState { Idle, Searching, Pursuit, Pause, Attack}

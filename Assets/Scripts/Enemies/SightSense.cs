@@ -5,7 +5,7 @@ public class SightSense : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        ThirdPersonController playerController = other.GetComponent<ThirdPersonController>();
+        TPSController playerController = other.GetComponent<TPSController>();
 
         if (playerController != null)
         {
