@@ -12,6 +12,7 @@ public class InventoryManager : MonoBehaviour
         inHandItem = inventoryItems[0];
 
         InitiateItems();
+        UIManager.Instance.UpdateCurrentInHandUI(inHandItem);
     }
 
     void Equip()

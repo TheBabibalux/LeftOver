@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 500cc53dafb4d794bafaaf45aaa3b1c1, type: 3}
   m_Name: WeaponTest
   m_EditorClassIdentifier: 
-  image: {fileID: 0}
+  image: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
   weaponName: 
   description: 
   isChargeItem: 1

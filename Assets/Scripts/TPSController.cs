@@ -203,9 +203,7 @@ namespace StarterAssets
                 Shoot();
             }
 
-            if( _input.reload && 
-                !isInShootingCD && !isReloading && 
-                inventoryManager.inHandItem.remainingCharges < inventoryManager.inHandItem.itemSO.maxCharge)
+            if( _input.reload && !isReloading && inventoryManager.inHandItem.remainingCharges < inventoryManager.inHandItem.itemSO.maxCharge)
             {
                 StartCoroutine(ReloadTime());
             }
@@ -348,6 +346,7 @@ namespace StarterAssets
         void Shoot()
         {
             inventoryManager.inHandItem.ModifyCharges(-1);
+            UIManager.Instance.RefreshChargesCount(inventoryManager.inHandItem.remainingCharges.ToString());
 
             RaycastHit hit;
             Physics.Raycast(shootOrigin.position, laserPointer.GetPosition(1) - shootOrigin.position, out hit, 15, targetHitMask);
@@ -380,11 +379,17 @@ namespace StarterAssets
 
         IEnumerator ReloadTime()
         {
-            isReloading = true;
+            float reloadDuration = inventoryManager.inHandItem.itemSO.reloadTime;
 
-            yield return new WaitForSeconds(inventoryManager.inHandItem.itemSO.reloadTime);
+            isReloading = true;
+            UIManager.Instance.ReloadFeedback(reloadDuration);
+
+            yield return new WaitForSeconds(reloadDuration);
+
             isReloading = false;
             inventoryManager.inHandItem.ModifyCharges(inventoryManager.inHandItem.itemSO.maxCharge);
+
+            UIManager.Instance.RefreshChargesCount(inventoryManager.inHandItem.remainingCharges.ToString());
         }
 
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
