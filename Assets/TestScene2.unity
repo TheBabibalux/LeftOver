@@ -3081,6 +3081,10 @@ PrefabInstance:
         type: 3}
       insertIndex: 3
       addedObject: {fileID: 4416926083347132245}
+    - targetCorrespondingSourceObject: {fileID: 3379121975792144823, guid: 5a94bf70e2a22c549a45fdc8e9487b29,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4416926083347132250}
   m_SourcePrefab: {fileID: 100100000, guid: 5a94bf70e2a22c549a45fdc8e9487b29, type: 3}
 --- !u!1 &2114283753834967212
 GameObject:
@@ -3372,11 +3376,30 @@ MonoBehaviour:
     m_Bits: 128
   target: {fileID: 0}
   laserPointer: {fileID: 808359561}
-  currentWeapon: {fileID: 11400000, guid: 5d1c7e8cdaf694d4ea30c026c4674108, type: 2}
   isAiming: 0
   isInShootingCD: 0
+  isReloading: 0
   basicHitFeedback: {fileID: 5601569866033551551, guid: c3859516f45795a4b8ca9e25a1c43bbc,
     type: 3}
+  aimDistance: 10
+--- !u!114 &4416926083347132250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 316795328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07d87af95a2c8fd4e8c13ffb83faf090, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inventoryItems:
+  - itemSO: {fileID: 11400000, guid: 5d1c7e8cdaf694d4ea30c026c4674108, type: 2}
+    remainingCharges: 0
+  inHandItem:
+    itemSO: {fileID: 0}
+    remainingCharges: 0
 --- !u!4 &8338988565591873055 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6922902054427650283, guid: 5a94bf70e2a22c549a45fdc8e9487b29,

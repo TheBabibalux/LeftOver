@@ -15,6 +15,7 @@ namespace StarterAssets
 		public bool isAiming;
 		public bool locking;
 		public bool isShooting;
+		public bool reload;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -60,6 +61,11 @@ namespace StarterAssets
 		public void OnShoot(InputValue value)
 		{
 			ShootInput(value.isPressed);
+		}
+
+		public void OnReload(InputValue value)
+		{
+            ReloadInput(value.isPressed);
 		}
 #endif
 
@@ -107,6 +113,11 @@ namespace StarterAssets
 		private void ShootInput(bool newShootState)
 		{
 			isShooting = newShootState;
+		}
+
+		private void ReloadInput(bool newReloadState)
+		{
+			reload = newReloadState;
 		}
 	}
 	

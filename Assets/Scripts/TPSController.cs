@@ -1,6 +1,7 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
 using UnityEngine.InputSystem;
@@ -15,8 +16,10 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM && STARTER_ASSETS_PACKAGES_CHECKED
     [RequireComponent(typeof(PlayerInput))]
 #endif
-    public class ThirdPersonController : MonoBehaviour
+    public class TPSController : MonoBehaviour
     {
+        private InventoryManager inventoryManager;
+
         [Header("Player")]
         [Tooltip("Move speed of the character in m/s")]
         public float MoveSpeed = 2.0f;
@@ -78,6 +81,10 @@ namespace StarterAssets
         [Tooltip("For locking the camera position on all axis")]
         public bool LockCameraPosition = false;
 
+        public float LookControllerSensitivity = 100f;
+
+        public bool InverseY = true;
+
         [Header("Shooting System")]
         public Transform shootOrigin;
         public float lockDistance;
@@ -85,11 +92,11 @@ namespace StarterAssets
         public LayerMask targetHitMask;
         [SerializeField] Target target;
         public LineRenderer laserPointer;
-        public WeaponSO currentWeapon;
         [SerializeField] private bool isAiming = false;
         [SerializeField] private bool isInShootingCD = false;
+        [SerializeField] private bool isReloading = false;
         public GameObject basicHitFeedback;
-
+        public float aimDistance = 10;
 
         // cinemachine
         private float _cinemachineTargetYaw;
@@ -150,8 +157,10 @@ namespace StarterAssets
 
         private void Start()
         {
+            inventoryManager = GetComponent<InventoryManager>();
+
             _cinemachineTargetYaw = CinemachineCameraTarget.transform.rotation.eulerAngles.y;
-            
+
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
             _input = GetComponent<StarterAssetsInputs>();
@@ -175,29 +184,36 @@ namespace StarterAssets
             GroundedCheck();
             Move();
 
-            switch(_input.locking)
+            switch (_input.locking)
             {
                 case true:
                     isAiming = true;
-                    LockTarget();
+                    Aim();
                     break;
                 case false:
                     isAiming = false;
-                    target = null;
                     laserPointer.enabled = false;
-                    Look();
                     break;
             }
 
-            if(_input.isShooting && target != null && !isInShootingCD)
+            Look();
+
+            if (!(inventoryManager.inHandItem.remainingCharges == 0 || isReloading) && _input.isShooting && !isInShootingCD )
             {
                 Shoot();
+            }
+
+            if( _input.reload && 
+                !isInShootingCD && !isReloading && 
+                inventoryManager.inHandItem.remainingCharges < inventoryManager.inHandItem.itemSO.maxCharge)
+            {
+                StartCoroutine(ReloadTime());
             }
         }
 
         private void LateUpdate()
         {
-            //CameraRotation();
+            CameraRotation();
         }
 
         private void AssignAnimationIDs()
@@ -223,16 +239,18 @@ namespace StarterAssets
                 _animator.SetBool(_animIDGrounded, Grounded);
             }
         }
-        /* private void CameraRotation()
+        private void CameraRotation()
         {
             // if there is an input and camera position is not fixed
             if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
             {
                 //Don't multiply mouse input by Time.deltaTime;
                 float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
+                float rectifiedYLookInput = (!IsCurrentDeviceMouse && InverseY) ? -_input.look.y : _input.look.y;
 
-                _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier;
-                _cinemachineTargetPitch += _input.look.y * deltaTimeMultiplier;
+                _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier * (IsCurrentDeviceMouse ? 1f : LookControllerSensitivity);
+                _cinemachineTargetPitch += rectifiedYLookInput * deltaTimeMultiplier * (IsCurrentDeviceMouse ? 1f : LookControllerSensitivity);
+                
             }
 
             // clamp our rotations so our values are limited 360 degrees
@@ -243,7 +261,6 @@ namespace StarterAssets
             CinemachineCameraTarget.transform.rotation = Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
                 _cinemachineTargetYaw, 0.0f);
         }
-        */
 
         private void Move()
         {
@@ -254,30 +271,22 @@ namespace StarterAssets
             }
             else
             {
-                targetSpeed = MoveSpeed * currentWeapon.aimingMoveSlowFactor;
+                targetSpeed = MoveSpeed * inventoryManager.inHandItem.itemSO.aimingMoveSlowFactor;
             }
-            // a simplistic acceleration and deceleration designed to be easy to remove, replace, or iterate upon
 
-            // note: Vector2's == operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-            // if there is no input, set the target speed to 0
             if (_input.move == Vector2.zero) targetSpeed = 0.0f;
 
-            // a reference to the players current horizontal velocity
             float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
 
             float speedOffset = 0.1f;
             float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
 
-            // accelerate or decelerate to target speed
             if (currentHorizontalSpeed < targetSpeed - speedOffset ||
                 currentHorizontalSpeed > targetSpeed + speedOffset)
             {
-                // creates curved result rather than a linear one giving a more organic speed change
-                // note T in Lerp is clamped, so we don't need to clamp our speed
                 _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude,
                     Time.deltaTime * SpeedChangeRate);
 
-                // round speed to 3 decimal places
                 _speed = Mathf.Round(_speed * 1000f) / 1000f;
             }
             else
@@ -288,18 +297,15 @@ namespace StarterAssets
             _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
             if (_animationBlend < 0.01f) _animationBlend = 0f;
 
-            // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
-            
+
             Vector3 targetDirection = Quaternion.Euler(0.0f,
                 (Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg + _mainCamera.transform.eulerAngles.y)
                                   , 0.0f) * Vector3.forward;
 
-            // move the player
             _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
                              new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
 
-            // update animator if using character
             if (_hasAnimator)
             {
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
@@ -309,116 +315,48 @@ namespace StarterAssets
 
         void Look()
         {
-            Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
-            Vector3 inputLook = new Vector3(_input.look.x, 0, _input.look.y).normalized;
+            Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, (isAiming ? Mathf.Abs(_input.move.y) : _input.move.y)).normalized;
 
-            //POUR TOURNER LE PERSONNAGE DANS LA DIRECTION DE LOOK
-            if (_input.look != Vector2.zero)
-            {
-                _targetRotation = Mathf.Atan2(inputLook.x, inputLook.z) * Mathf.Rad2Deg +
-                                  _mainCamera.transform.eulerAngles.y;
-                float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
-                    RotationSmoothTime);
+            _targetRotation = Mathf.Atan2(isAiming ? 0 : inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
+                                 _mainCamera.transform.eulerAngles.y;
+            float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
+                RotationSmoothTime);
 
-                // rotate to face input direction relative to camera position
-                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-            }
-            else if (_input.move != Vector2.zero)
-            {
-                _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
-                                     _mainCamera.transform.eulerAngles.y;
-                float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
-                    RotationSmoothTime);
-
-                // rotate to face input direction relative to camera position
-                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-            }
+            // rotate to face input direction relative to camera position
+            Face(rotation);
         }
 
-        Target FindTarget()
+        void Face(float rotation)
         {
+            transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+        }
+
+        void Aim()
+        {
+            laserPointer.enabled = true;
+
             RaycastHit hit;
-            Physics.Raycast(shootOrigin.position, transform.forward, out hit, lockDistance, targetMask);
+            Physics.Raycast(_mainCamera.GetComponent<Camera>().ViewportToWorldPoint(new Vector3(0.5f, 0.5f)),
+                _mainCamera.GetComponent<Camera>().ViewportToWorldPoint(new Vector3(0.5f, 0.5f, aimDistance)), out hit, aimDistance, targetHitMask);
 
-            Target target;
+            Vector3 aimPos = hit.collider == null ? _mainCamera.GetComponent<Camera>().ViewportToWorldPoint(new Vector3(0.5f, 0.5f, aimDistance)) : hit.point;
 
-            if(hit.collider != null)
-            {
-                target = hit.collider.GetComponent<Target>();
-            }
-            else
-            {
-                target = null;
-            }
-
-            return target;
-        }
-        void LockTarget()
-        {
-            if(target != null)
-            {
-                //Regarder vers la cible
-                Vector3 vectorToTarget = new Vector3(target.transform.position.x - transform.position.x, 0f, target.transform.position.z - transform.position.z);
-                float rotation = Mathf.Atan2(vectorToTarget.x, vectorToTarget.z) * Mathf.Rad2Deg +
-                                      _mainCamera.transform.eulerAngles.y;
-                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-
-                //Cibler les différentes parties du corps                
-                float aimY = _input.look.y;
-                float aimX = _input.look.x;
-
-                float aimHeight = 0;
-                if (aimY > 0)
-                {
-                    aimHeight = Mathf.Lerp(target.targetCenter.position.y, target.targetHead.position.y, aimY);
-                }
-                else if (aimY < 0)
-                {
-                    aimHeight = Mathf.Lerp(target.targetCenter.position.y, target.targetLeg.position.y, Mathf.Abs(aimY));
-                }
-                else
-                {
-                    aimHeight = target.targetCenter.position.y;
-                }
-
-                float aimLatitude = 0;
-                if (aimX > 0)
-                {
-                    aimLatitude = Mathf.Lerp(target.targetCenter.position.x, target.targetRight.position.x, aimX);
-                }
-                else if (aimX < 0)
-                {
-                    aimLatitude = Mathf.Lerp(target.targetCenter.position.x, target.targetLeft.position.x, Mathf.Abs(aimX));
-                }
-                else
-                {
-                    aimLatitude = target.targetCenter.position.x;
-                }
-
-                laserPointer.enabled = true;
-                Vector3 aimPos = new Vector3(aimLatitude, aimHeight, target.targetCenter.position.z);
-                laserPointer.SetPosition(0,shootOrigin.position);
-                laserPointer.SetPosition(1, aimPos);
-            }
-            else
-            {
-                laserPointer.enabled = false;
-                target = FindTarget();
-
-                Look();
-            }
+            laserPointer.SetPosition(0, shootOrigin.position);
+            laserPointer.SetPosition(1, aimPos);
         }
 
         void Shoot()
         {
+            inventoryManager.inHandItem.ModifyCharges(-1);
+
             RaycastHit hit;
             Physics.Raycast(shootOrigin.position, laserPointer.GetPosition(1) - shootOrigin.position, out hit, 15, targetHitMask);
             Debug.DrawRay(shootOrigin.position, laserPointer.GetPosition(1) - shootOrigin.position, Color.green, 3);
 
-            if(hit.collider != null)
+            if (hit.collider != null)
             {
                 TargetHitZone hitZone = hit.collider.GetComponent<TargetHitZone>();
-                float resultingHealth = hitZone.Hit(currentWeapon.baseDamage);
+                float resultingHealth = hitZone.Hit(inventoryManager.inHandItem.itemSO.baseDamage);
 
                 GameObject hitFeedbackObject = Instantiate<GameObject>(basicHitFeedback);
                 hitFeedbackObject.transform.position = hit.point;
@@ -436,8 +374,17 @@ namespace StarterAssets
         {
             isInShootingCD = true;
 
-            yield return new WaitForSeconds(currentWeapon.shootingRate);
+            yield return new WaitForSeconds(inventoryManager.inHandItem.itemSO.shootingRate);
             isInShootingCD = false;
+        }
+
+        IEnumerator ReloadTime()
+        {
+            isReloading = true;
+
+            yield return new WaitForSeconds(inventoryManager.inHandItem.itemSO.reloadTime);
+            isReloading = false;
+            inventoryManager.inHandItem.ModifyCharges(inventoryManager.inHandItem.itemSO.maxCharge);
         }
 
         private static float ClampAngle(float lfAngle, float lfMin, float lfMax)

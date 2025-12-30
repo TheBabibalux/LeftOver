@@ -9,12 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6522a569ebf24fd409fdaa643a7efb9e, type: 3}
+  m_Script: {fileID: 11500000, guid: 500cc53dafb4d794bafaaf45aaa3b1c1, type: 3}
   m_Name: WeaponTest
   m_EditorClassIdentifier: 
-  maxAmmunitions: 1
+  image: {fileID: 0}
+  weaponName: 
+  description: 
+  isChargeItem: 1
+  maxCharge: 15
   shootingRate: 1
   stabilisationDuration: 1
   walkingDestabilisationScale: 1
   baseDamage: 2.5
   aimingMoveSlowFactor: 0.5
+  reloadTime: 4
